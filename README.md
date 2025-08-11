@@ -1,129 +1,175 @@
-# city-timezones
+# city-timezones-go
 
-A light and fast method of looking up timezones given the name of a city.
+A fast and lightweight Go library for looking up timezones by city name, with additional coordinate and Plus Code support.
+
+This is a Go port of the popular [city-timezones](https://github.com/kevinroberts/city-timezones) Node.js library, featuring embedded compressed data and zero runtime dependencies.
+
+## Installation
 
 ```bash
-npm install city-timezones
+go get github.com/justcfx2u/city-timezones-go
 ```
 
-```javascript
-var cityTimezones = require('city-timezones');
+## Usage
+
+```go
+import "github.com/justcfx2u/city-timezones-go"
 ```
 
-### cityTimezones.lookupViaCity(city: string)
+## API Reference
 
-If a city is found, returns an **array** of possible matches with city, state, lat, lng, timezone. Returns an empty `[]` if nothing matches. Multiple cities can be found if they have the same name, i.e. Springfield.
-A U.S. based city will contain a `state_ansi` property which is the abbreviated form of a US State [ANSI State Table](https://www.census.gov/geo/reference/ansi_statetables.html)
+### LookupViaCity(city string) []CityData
 
-finding based on city name of Chicago (case insensitive):
-```javascript
-const cityLookup = cityTimezones.lookupViaCity('Chicago')
-console.log(cityLookup)
-```
-Will return:
-```javascript
-[ { city: 'Chicago',
-    city_ascii: 'Chicago',
-    lat: 41.82999066,
-    lng: -87.75005497,
-    pop: 5915976,
-    country: 'United States of America',
-    iso2: 'US',
-    iso3: 'USA',
-    province: 'Illinois',
-    exactCity: 'Chicago',
-    exactProvince: 'IL',
-    state_ansi: 'IL',
-    timezone: 'America/Chicago' } ]
+Finds cities by exact name match (case-insensitive). Returns an array of matching cities, or an empty slice if nothing matches.
+
+```go
+cities := citytimezones.LookupViaCity("Chicago")
+fmt.Printf("Found %d matches for Chicago\n", len(cities))
+if len(cities) > 0 {
+    fmt.Printf("Timezone: %s\n", cities[0].Timezone)
+    fmt.Printf("Coordinates: %f, %f\n", cities[0].Lat, cities[0].Lng)
+}
 ```
 
-### cityTimezones.findFromCityStateProvince(searchString: string)
+### FindFromCityStateProvince(searchString string) []CityData
 
-This method will return any partial match for the search term based on city, province, or country, or a combination thereof. A U.S. based city will also return matches for the `state_ansi` property.
+Performs partial matching across city, state/province, and country fields. Supports space-separated search terms.
 
-finding based on search term of Springfield MO
-```javascript
-const cityLookup = cityTimezones.findFromCityStateProvince('springfield mo')
-console.log(cityLookup)
-```
-Will return:
-```javascript
-[ { city: 'Springfield',
-    city_ascii: 'Springfield',
-    lat: 37.18001609,
-    lng: -93.31999923,
-    pop: 180691,
-    country: 'United States of America',
-    iso2: 'US',
-    iso3: 'USA',
-    province: 'Missouri',
-    state_ansi: 'MO',
-    timezone: 'America/Chicago' } ]	
+```go
+cities := citytimezones.FindFromCityStateProvince("springfield mo")
+// Returns cities matching both "springfield" and "mo"
+
+cities = citytimezones.FindFromCityStateProvince("London")
+// Returns all cities named London across different countries
 ```
 
-### cityTimezones.findFromIsoCode(iso_code: string)
+### FindFromIsoCode(isoCode string) []CityData
 
-If a iso code is found, returns an **array** of possible matches with city, state, lat, lng, timezone. Returns an empty `[]` if nothing matches. Multiple cities are returned if there are more than one city for the given iso code.
+Finds cities by ISO2 or ISO3 country code (case-insensitive).
 
-finding based on iso code of Germany (case insensitive):
-```javascript
-const findFromIsoCode = cityTimezones.findFromIsoCode('DE')
-console.log(findFromIsoCode)
-```
-Will return:
-```javascript
-[
-  {
-    city: "Mainz",
-    city_ascii: "Mainz",
-    country: "Germany",
-    iso2: "DE",
-    iso3: "DEU",
-    lat: 49.98247246,
-    lng: 8.273219156,
-    pop: 184997,
-    province: "Rheinland-Pfalz",
-    timezone: "Europe/Berlin"
-  },
-  ...
-]
+```go
+germanCities := citytimezones.FindFromIsoCode("DE")
+// or
+germanCities = citytimezones.FindFromIsoCode("DEU")
 ```
 
-### cityTimezones.cityMapping
+### FindNearestCities(lat, lng, radiusKm float64) []CityData
 
-This array will contain the full list of all available cities.
+Finds all cities within a specified radius of given coordinates. Results are sorted by distance (closest first).
 
-```javascript
-const cityMapping = cityTimezones.cityMapping
-console.log(cityMapping)
+```go
+// Find cities within 50km of coordinates
+cities := citytimezones.FindNearestCities(41.8299, -87.7500, 50.0)
 ```
-Will return:
-```javascript
-[
-  {
-    "city": "Qal eh-ye Now",
-    "city_ascii": "Qal eh-ye",
-    "lat": 34.98300013,
-    "lng": 63.13329964,
-    "pop": 2997,
-    "country": "Afghanistan",
-    "iso2": "AF",
-    "iso3": "AFG",
-    "province": "Badghis",
-    "timezone": "Asia/Kabul"
-  },
-  {
-    "city": "Chaghcharan",
-    "city_ascii": "Chaghcharan",
-    "lat": 34.5167011,
-    "lng": 65.25000063,
-    "pop": 15000,
-    "country": "Afghanistan",
-    "iso2": "AF",
-    "iso3": "AFG",
-    "province": "Ghor",
-    "timezone": "Asia/Kabul"
-  },
-  ...
-]	
+
+### FindFromCoordinates(coords interface{}) []CityData
+
+Flexible coordinate input supporting multiple formats. Uses a default 50km search radius.
+
+```go
+// String format
+cities := citytimezones.FindFromCoordinates("41.8299,-87.7500")
+
+// Array format  
+cities = citytimezones.FindFromCoordinates([2]float64{41.8299, -87.7500})
+
+// Slice format
+cities = citytimezones.FindFromCoordinates([]float64{41.8299, -87.7500})
 ```
+
+### FindFromPlusCode(plusCode string) []CityData
+
+Finds cities near a location specified by a [Plus Code](https://plus.codes/) (Open Location Code).
+
+```go
+// Plus code for Chicago area
+cities := citytimezones.FindFromPlusCode("86HJP27M+XF")
+```
+
+### GetCityMapping() []CityData
+
+Returns the complete dataset of all cities (7300+ entries).
+
+```go
+allCities := citytimezones.GetCityMapping()
+fmt.Printf("Total cities in database: %d\n", len(allCities))
+```
+
+## Data Structure
+
+Each city is represented by a `CityData` struct:
+
+```go
+type CityData struct {
+    City        string      `json:"city"`           // Display name
+    CityAscii   string      `json:"city_ascii"`     // ASCII version  
+    Lat         float64     `json:"lat"`            // Latitude
+    Lng         float64     `json:"lng"`            // Longitude
+    Pop         interface{} `json:"pop"`            // Population (varies by type)
+    Country     string      `json:"country"`        // Full country name
+    ISO2        interface{} `json:"iso2"`           // ISO2 country code  
+    ISO3        interface{} `json:"iso3"`           // ISO3 country code
+    Province    string      `json:"province"`       // State/province
+    Timezone    string      `json:"timezone"`       // IANA timezone identifier
+    StateAnsi   interface{} `json:"state_ansi,omitempty"`    // US state abbreviation
+    ExactCity   interface{} `json:"exactCity,omitempty"`     // Alternative city name
+    ExactProvince interface{} `json:"exactProvince,omitempty"` // Alternative province
+}
+```
+
+## Features
+
+- **Zero Dependencies**: Uses only Go standard library (plus Google's Plus Codes library)
+- **Embedded Data**: City data is compressed and embedded at compile time (~267KB gzipped)
+- **Fast Lookups**: In-memory operations with efficient filtering
+- **Flexible Input**: Multiple coordinate input formats supported
+- **Plus Codes Support**: Integration with Google's Open Location Code system
+- **Cross-Platform**: Works on all platforms supported by Go
+- **Thread-Safe**: All operations are read-only and safe for concurrent use
+
+## Performance
+
+- **Data Size**: ~1.9MB JSON compressed to ~267KB (86% compression)
+- **Cities**: 7300+ cities worldwide with timezone information
+- **Memory Usage**: Data loaded once at initialization
+- **Lookup Speed**: Sub-millisecond performance for most operations
+
+## Data Synchronization
+
+Keep data up-to-date with the upstream repository:
+
+```bash
+go run cmd/sync-data/main.go
+```
+
+This tool downloads the latest city data from the upstream repository, validates it, and updates both the JSON file and compressed version.
+
+## Development
+
+```bash
+# Run tests
+go test -v
+
+# Sync data from upstream
+go run cmd/sync-data/main.go
+
+# Debug data loading
+go run cmd/debug-json/main.go
+go run cmd/debug-embedded/main.go
+```
+
+## License
+
+MIT License - Same as the original [city-timezones](https://github.com/kevinroberts/city-timezones) project.
+
+## Credits
+
+This project is a Go port of the excellent [city-timezones](https://github.com/kevinroberts/city-timezones) JavaScript library by **Kevin Roberts**.
+
+- **Original Author**: [Kevin Roberts](https://github.com/kevinroberts)
+- **Original Project**: [kevinroberts/city-timezones](https://github.com/kevinroberts/city-timezones) (Node.js/JavaScript)
+- **Data Source**: City timezone data compiled and maintained by Kevin Roberts
+- **License**: MIT (same as original project)
+- **Plus Codes Support**: [Google's Open Location Code](https://github.com/google/open-location-code)
+
+Special thanks to Kevin Roberts for creating and maintaining the original comprehensive city timezone database that makes this Go library possible.

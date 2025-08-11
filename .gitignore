@@ -1,2 +1,62 @@
-node_modules/
+# Claude Code artifacts
+.claude/
+CLAUDE*
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Go coverage files
+*.cover
+coverage.html
+coverage.out
+profile.out
+
+# Go vendor directory (if using vendor mode)
+vendor/
+
+# Go module cache
+go.sum.backup
+
+# Binaries for programs and plugins
+main
+cmd/*/main
+dist/
+build/
+
+# IDE files
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Debug and profiling
+cpu.prof
+mem.prof
+*.pprof
+
+# Air live reload (if using)
+tmp/
+.air.toml
